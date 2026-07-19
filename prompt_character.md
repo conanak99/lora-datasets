@@ -45,7 +45,6 @@ Check [## Default Appearance] section for default appearance.
 3. **Rewrite**: output the final, enhanced English single-paragraph caption.
 
 Output each caption as a markdown that contains the pure caption with nothing else in it.
-Substitute the text between 'IMPORTANT:' and 'Additional information:' with the following if not training a style:
 
 ## Default Appearance
 
