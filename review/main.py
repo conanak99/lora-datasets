@@ -25,9 +25,16 @@ TEXT = "#e8e8ee"
 MUTED = "#8a8a99"
 GREEN = "#5fbf77"
 AMBER = "#d9a441"
+ACCENT = "#6c8cff"
 
 SAVE_DELAY_MS = 600
 RESIZE_DELAY_MS = 80
+
+THUMB_W = 96
+THUMB_H = 72
+THUMB_GAP = 8
+THUMB_PAD = 10
+STRIP_H = THUMB_H + 12
 
 
 class ReviewApp:
@@ -42,6 +49,8 @@ class ReviewApp:
         self.loading = False  # suppress modified events while loading text
         self.pil_image: Image.Image | None = None
         self.tk_image = None
+        self.thumbs: list[ImageTk.PhotoImage | None] = []
+        self.thumb_gen = 0  # invalidates in-flight thumbnail loads on folder change
 
         root.title("Caption Review")
         root.geometry("1280x800")
@@ -87,6 +96,29 @@ class ReviewApp:
         self.status_var = tk.StringVar()
         self.status_label = tk.Label(bar, textvariable=self.status_var, bg=PANEL, fg=GREEN)
         self.status_label.pack(side="right", padx=8)
+
+        # Thumbnail strip (packed before the main panes so it claims the bottom)
+        strip = tk.Frame(self.root, bg=PANEL)
+        strip.pack(side="bottom", fill="x")
+        tk.Frame(strip, bg=BORDER, height=1).pack(fill="x")
+        self.thumb_canvas = tk.Canvas(
+            strip, height=STRIP_H, bg=PANEL, highlightthickness=0,
+            xscrollincrement=1,
+        )
+        self.thumb_canvas.pack(fill="x")
+        thumb_bar = tk.Scrollbar(
+            strip, orient="horizontal", command=self.thumb_canvas.xview
+        )
+        thumb_bar.pack(fill="x")
+        self.thumb_canvas.configure(xscrollcommand=thumb_bar.set)
+        self.thumb_canvas.bind("<Button-1>", self._on_thumb_click)
+        self.thumb_canvas.bind("<MouseWheel>", self._on_thumb_wheel)
+        self.thumb_canvas.bind("<Shift-MouseWheel>", self._on_thumb_wheel)
+        try:
+            # Tk 9 reports trackpad scrolling as a separate event.
+            self.thumb_canvas.bind("<TouchpadScroll>", self._on_thumb_touchpad)
+        except tk.TclError:
+            pass  # Tk 8.x: trackpad arrives as <MouseWheel>
 
         # Main panes: image | caption
         main = tk.PanedWindow(
@@ -153,6 +185,7 @@ class ReviewApp:
             if p.suffix.lower() in IMAGE_EXTS and not p.name.startswith(".")
         )
         self.root.title(f"Caption Review — {self.folder}")
+        self._rebuild_thumbs()
         if not self.images:
             self.fname_var.set("No images found in this folder")
             self.counter_var.set("")
@@ -181,6 +214,7 @@ class ReviewApp:
         cap = self.caption_path(img_path)
         self._set_text(cap.read_text(encoding="utf-8") if cap.is_file() else "")
         self._set_status("", GREEN)
+        self._update_thumb_selection()
 
     def caption_path(self, img_path: Path) -> Path:
         return img_path.with_suffix(".txt")
@@ -204,6 +238,86 @@ class ReviewApp:
         if self.resize_job:
             self.root.after_cancel(self.resize_job)
         self.resize_job = self.root.after(RESIZE_DELAY_MS, self._render_image)
+
+    # ---------- Thumbnail strip ----------
+
+    def _thumb_x(self, i: int) -> int:
+        return THUMB_PAD + i * (THUMB_W + THUMB_GAP)
+
+    def _thumb_total_width(self) -> int:
+        return self._thumb_x(len(self.images)) + THUMB_PAD
+
+    def _rebuild_thumbs(self):
+        self.thumb_gen += 1
+        self.thumbs = [None] * len(self.images)
+        self.thumb_canvas.delete("all")
+        self.thumb_canvas.configure(
+            scrollregion=(0, 0, self._thumb_total_width(), STRIP_H)
+        )
+        self.thumb_canvas.xview_moveto(0)
+        if self.images:
+            self.root.after(1, self._load_thumb, 0, self.thumb_gen)
+
+    def _load_thumb(self, i: int, gen: int):
+        # Thumbnails load one per tick so the UI stays responsive.
+        if gen != self.thumb_gen:
+            return
+        try:
+            with Image.open(self.images[i]) as im:
+                im.thumbnail((THUMB_W, THUMB_H))
+                self.thumbs[i] = ImageTk.PhotoImage(im)
+            self.thumb_canvas.create_image(
+                self._thumb_x(i) + THUMB_W // 2, STRIP_H // 2,
+                image=self.thumbs[i],
+            )
+            self.thumb_canvas.tag_raise("sel")
+        except OSError:
+            pass
+        if i + 1 < len(self.images):
+            self.root.after(1, self._load_thumb, i + 1, gen)
+
+    def _update_thumb_selection(self):
+        self.thumb_canvas.delete("sel")
+        x = self._thumb_x(self.idx)
+        self.thumb_canvas.create_rectangle(
+            x - 3, 3, x + THUMB_W + 3, STRIP_H - 3,
+            outline=ACCENT, width=2, tags="sel",
+        )
+        # Scroll the selection into view.
+        total = self._thumb_total_width()
+        visible_w = self.thumb_canvas.winfo_width()
+        if total <= visible_w:
+            return
+        vis_x0 = self.thumb_canvas.xview()[0] * total
+        if x - THUMB_PAD < vis_x0:
+            self.thumb_canvas.xview_moveto(max(x - THUMB_PAD, 0) / total)
+        elif x + THUMB_W + THUMB_PAD > vis_x0 + visible_w:
+            self.thumb_canvas.xview_moveto(
+                (x + THUMB_W + THUMB_PAD - visible_w) / total
+            )
+
+    def _on_thumb_click(self, event):
+        if not self.images:
+            return
+        cx = self.thumb_canvas.canvasx(event.x)
+        i = int((cx - THUMB_PAD) // (THUMB_W + THUMB_GAP))
+        if 0 <= i < len(self.images):
+            self.goto(i)
+
+    def _on_thumb_wheel(self, event):
+        delta = event.delta
+        if abs(delta) >= 120:  # Tk 9 normalizes mouse wheels to multiples of 120
+            delta //= 120
+        self.thumb_canvas.xview_scroll(-delta * 30, "units")
+
+    def _on_thumb_touchpad(self, event):
+        # Tk 9 packs the scroll vector as (dx << 16) | (dy & 0xFFFF).
+        dx = event.delta >> 16
+        dy = event.delta & 0xFFFF
+        if dy >= 0x8000:
+            dy -= 0x10000
+        step = dx if dx else dy  # vertical swipes also pan the strip
+        self.thumb_canvas.xview_scroll(-step * 2, "units")
 
     # ---------- Caption editing / auto-save ----------
 
