@@ -48,4 +48,4 @@ Output each caption as a markdown that contains the pure caption with nothing el
 
 ## Default Appearance
 
-Brunette with middle length hair.
+Brunette with long/medium length hair.
