@@ -1,4 +1,4 @@
-"""Desktop image/caption review app (Tkinter).
+"""Desktop image captioning app (Tkinter).
 
 Usage:
     uv run main.py [folder]
@@ -37,7 +37,7 @@ THUMB_PAD = 10
 STRIP_H = THUMB_H + 12
 
 
-class ReviewApp:
+class CaptionApp:
     def __init__(self, root: tk.Tk, folder: Path | None):
         self.root = root
         self.folder: Path | None = None
@@ -52,7 +52,7 @@ class ReviewApp:
         self.thumbs: list[ImageTk.PhotoImage | None] = []
         self.thumb_gen = 0  # invalidates in-flight thumbnail loads on folder change
 
-        root.title("Caption Review")
+        root.title("Caption")
         root.geometry("1280x800")
         root.configure(bg=BG)
         self._build_ui()
@@ -184,7 +184,7 @@ class ReviewApp:
             p for p in self.folder.iterdir()
             if p.suffix.lower() in IMAGE_EXTS and not p.name.startswith(".")
         )
-        self.root.title(f"Caption Review — {self.folder}")
+        self.root.title(f"Caption — {self.folder}")
         self._rebuild_thumbs()
         if not self.images:
             self.fname_var.set("No images found in this folder")
@@ -367,7 +367,7 @@ class ReviewApp:
 
 
 def main():
-    parser = argparse.ArgumentParser(description="Review image/caption pairs.")
+    parser = argparse.ArgumentParser(description="Generate and edit image captions.")
     parser.add_argument(
         "folder", nargs="?", help="Folder containing images and .txt captions"
     )
@@ -380,7 +380,7 @@ def main():
             sys.exit(f"Not a folder: {folder}")
 
     root = tk.Tk()
-    ReviewApp(root, folder)
+    CaptionApp(root, folder)
     root.mainloop()
 
 

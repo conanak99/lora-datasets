@@ -1,6 +1,7 @@
-# Caption Review
+# Caption
 
-Desktop app (Tkinter) for reviewing and editing image/caption pairs (LoRA datasets).
+Desktop app (Tkinter) for generating, reviewing, and editing image/caption pairs
+for LoRA datasets.
 
 ## Usage
 

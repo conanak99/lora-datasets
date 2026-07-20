@@ -13,7 +13,9 @@ git clone --depth 1 https://github.com/conanak99/lora-datasets.git
 ## Contents
 
 - `data/*` — dataset images and captions.
-- `prompt.md` — image-captioning prompt (SCALIS framework) for generating LoRA training captions.
+- `prompt_character.md` — character LoRA image-captioning prompt.
+- `prompt_style.md` — style LoRA image-captioning prompt.
+- `caption/` — desktop app for generating, reviewing, and editing captions.
 - `resize_to_jpeg.sh` — batch-converts a folder of images to JPEG.
 
 ## Resizing images
