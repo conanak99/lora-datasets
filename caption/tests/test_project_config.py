@@ -1,6 +1,6 @@
 from pathlib import Path
-import tomllib
 
+import tomllib
 
 PROJECT_DIR = Path(__file__).resolve().parents[1]
 

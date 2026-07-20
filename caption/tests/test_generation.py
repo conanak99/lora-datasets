@@ -1,5 +1,5 @@
-from pathlib import Path
 import sys
+from pathlib import Path
 from types import SimpleNamespace
 
 import pytest
@@ -89,17 +89,13 @@ def test_prompt_path_selects_character_and_style_files(tmp_path: Path):
     assert prompt_path(PromptMode.CHARACTER, prompt_dir) == (
         prompt_dir / "prompt_character.md"
     )
-    assert prompt_path(PromptMode.STYLE, prompt_dir) == (
-        prompt_dir / "prompt_style.md"
-    )
+    assert prompt_path(PromptMode.STYLE, prompt_dir) == (prompt_dir / "prompt_style.md")
 
 
 def test_read_prompt_loads_the_selected_prompt(tmp_path: Path):
     prompt_dir = tmp_path / "prompt"
     prompt_dir.mkdir()
-    (prompt_dir / "prompt_style.md").write_text(
-        "style instructions", encoding="utf-8"
-    )
+    (prompt_dir / "prompt_style.md").write_text("style instructions", encoding="utf-8")
 
     assert read_prompt(PromptMode.STYLE, prompt_dir) == "style instructions"
 
@@ -157,9 +153,7 @@ def test_generate_folder_skips_existing_captions_and_writes_missing_ones(
     assert (tmp_path / "b.txt").read_text(encoding="utf-8") == ""
     assert (tmp_path / "c.txt").read_text(encoding="utf-8") == "new caption"
     assert captioner.load_calls == 1
-    assert captioner.generate_calls == [
-        (tmp_path / "c.webp", "selected prompt")
-    ]
+    assert captioner.generate_calls == [(tmp_path / "c.webp", "selected prompt")]
 
 
 def test_generate_folder_reports_progress_after_each_completed_image(tmp_path: Path):
@@ -279,7 +273,9 @@ def test_hugging_face_captioner_loads_model_card_configuration_once(monkeypatch)
             processor_calls.append(model_id)
             return processor
 
-    fake_torch = SimpleNamespace(bfloat16="bfloat16", set_num_threads=lambda count: None)
+    fake_torch = SimpleNamespace(
+        bfloat16="bfloat16", set_num_threads=lambda count: None
+    )
     fake_transformers = SimpleNamespace(
         AutoProcessor=FakeProcessorClass,
         Qwen3VLForConditionalGeneration=FakeModelClass,

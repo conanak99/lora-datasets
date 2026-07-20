@@ -1,15 +1,14 @@
 """Caption model integration and resumable folder generation."""
 
+import os
+import re
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
-import os
 from pathlib import Path
-import re
 from typing import Any, Protocol
 
 from PIL import Image, ImageOps
-
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
 MODEL_ID = "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated"
@@ -98,7 +97,9 @@ class HuggingFaceCaptioner:
         generated_ids = self.model.generate(**inputs, max_new_tokens=512)
         generated_ids_trimmed = [
             output_ids[len(input_ids) :]
-            for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
+            for input_ids, output_ids in zip(
+                inputs.input_ids, generated_ids, strict=True
+            )
         ]
         return self.processor.batch_decode(
             generated_ids_trimmed,
@@ -121,8 +122,7 @@ def format_progress(progress: GenerationProgress | GenerationResult) -> str:
     """Format generated and skipped counts for the desktop toolbar."""
     pending_total = progress.total - progress.skipped
     return (
-        f"generated {progress.completed} / {pending_total}"
-        f" · skipped {progress.skipped}"
+        f"generated {progress.completed} / {pending_total} · skipped {progress.skipped}"
     )
 
 

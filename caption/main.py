@@ -92,8 +92,12 @@ class CaptionApp:
             # macOS Aqua ignores bg/fg on tk.Button, so keep system styling
             # and only tint the surrounding highlight frame to match the bar.
             return tk.Button(
-                bar, text=text, command=cmd,
-                highlightbackground=PANEL, relief="flat", padx=10,
+                bar,
+                text=text,
+                command=cmd,
+                highlightbackground=PANEL,
+                relief="flat",
+                padx=10,
             )
 
         toolbar_btn("Open Folder…", self.pick_folder).pack(side="left")
@@ -135,7 +139,9 @@ class CaptionApp:
             side="right", padx=12
         )
         self.status_var = tk.StringVar()
-        self.status_label = tk.Label(bar, textvariable=self.status_var, bg=PANEL, fg=GREEN)
+        self.status_label = tk.Label(
+            bar, textvariable=self.status_var, bg=PANEL, fg=GREEN
+        )
         self.status_label.pack(side="right", padx=8)
 
         # Thumbnail strip (packed before the main panes so it claims the bottom)
@@ -143,7 +149,10 @@ class CaptionApp:
         strip.pack(side="bottom", fill="x")
         tk.Frame(strip, bg=BORDER, height=1).pack(fill="x")
         self.thumb_canvas = tk.Canvas(
-            strip, height=STRIP_H, bg=PANEL, highlightthickness=0,
+            strip,
+            height=STRIP_H,
+            bg=PANEL,
+            highlightthickness=0,
             xscrollincrement=1,
         )
         self.thumb_canvas.pack(fill="x")
@@ -177,17 +186,26 @@ class CaptionApp:
         mono = font.nametofont("TkFixedFont").copy()
         mono.configure(size=13)
         self.text = tk.Text(
-            right, wrap="word", undo=True, bg=PANEL, fg=TEXT,
-            insertbackground=TEXT, relief="flat", padx=16, pady=14,
-            font=mono, spacing2=4, highlightthickness=0,
+            right,
+            wrap="word",
+            undo=True,
+            bg=PANEL,
+            fg=TEXT,
+            insertbackground=TEXT,
+            relief="flat",
+            padx=16,
+            pady=14,
+            font=mono,
+            spacing2=4,
+            highlightthickness=0,
         )
         self.text.pack(fill="both", expand=True)
         self.text.bind("<<Modified>>", self._on_text_modified)
 
         hint = "Auto-saves as you type   \u2190/\u2192 navigate (Esc leaves the editor)"
-        tk.Label(right, text=hint, bg=PANEL, fg=MUTED, anchor="w", padx=16, pady=4).pack(
-            fill="x"
-        )
+        tk.Label(
+            right, text=hint, bg=PANEL, fg=MUTED, anchor="w", padx=16, pady=4
+        ).pack(fill="x")
 
     def _bind_keys(self):
         self.root.bind("<Left>", self._nav_key(-1))
@@ -201,6 +219,7 @@ class CaptionApp:
             if self.root.focus_get() is self.text:
                 return
             self.goto(self.idx + delta)
+
         return handler
 
     # ---------- Folder / navigation ----------
@@ -304,7 +323,8 @@ class CaptionApp:
         self.flush_save()
         self.folder = folder.expanduser().resolve()
         self.images = sorted(
-            p for p in self.folder.iterdir()
+            p
+            for p in self.folder.iterdir()
             if p.suffix.lower() in IMAGE_EXTS and not p.name.startswith(".")
         )
         self.root.title(f"Caption — {self.folder}")
@@ -390,7 +410,8 @@ class CaptionApp:
                 im.thumbnail((THUMB_W, THUMB_H))
                 self.thumbs[i] = ImageTk.PhotoImage(im)
             self.thumb_canvas.create_image(
-                self._thumb_x(i) + THUMB_W // 2, STRIP_H // 2,
+                self._thumb_x(i) + THUMB_W // 2,
+                STRIP_H // 2,
                 image=self.thumbs[i],
             )
             self.thumb_canvas.tag_raise("sel")
@@ -403,8 +424,13 @@ class CaptionApp:
         self.thumb_canvas.delete("sel")
         x = self._thumb_x(self.idx)
         self.thumb_canvas.create_rectangle(
-            x - 3, 3, x + THUMB_W + 3, STRIP_H - 3,
-            outline=ACCENT, width=2, tags="sel",
+            x - 3,
+            3,
+            x + THUMB_W + 3,
+            STRIP_H - 3,
+            outline=ACCENT,
+            width=2,
+            tags="sel",
         )
         # Scroll the selection into view.
         total = self._thumb_total_width()

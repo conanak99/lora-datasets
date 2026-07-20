@@ -62,3 +62,37 @@ The first generation run downloads the model weights from Hugging Face and can
 take a while. The 4B model also requires substantial memory. The model author
 warns that this abliterated model has reduced safety filtering, so review its
 captions before using or distributing them.
+
+## Development checks
+
+Ruff is installed with the project's development dependencies. Run linting,
+format verification, and tests with:
+
+```bash
+uv run ruff check .
+uv run ruff format --check .
+uv run python -m pytest -v
+```
+
+Current Zed releases include Ruff for Python, so a separate extension install is
+not required. See [Zed's Python and Ruff setup](https://zed.dev/docs/languages/python)
+or open `zed: extensions` and search for `Ruff` to confirm the built-in support.
+For format-on-save and import sorting, add this to Zed's `settings.json`:
+
+```json
+{
+  "languages": {
+    "Python": {
+      "code_actions_on_format": {
+        "source.organizeImports.ruff": true
+      },
+      "formatter": {
+        "language_server": {
+          "name": "ruff"
+        }
+      },
+      "format_on_save": "on"
+    }
+  }
+}
+```
