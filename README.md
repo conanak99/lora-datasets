@@ -30,7 +30,9 @@ Converts every image in `<folder>` to JPEG at quality 95, resizing so the shorte
 
 ## Training
 
-- Use Grad 1, 2400 steps (save every 250) or grad 2, 1500 steps (save every 100)
+- Settings:
+  - gradient_accumulation 1, 2400 steps (save every 200)
+  - gradient_accumulation 2, 1500 steps (save every 100). MIGHT OOM sometimes.
 - Trigger words convention:
   - ctt_h4n44m3 (character + hanaame) / ctt_x140d1ng (character + xiaoding)
   - stl_k4k40 (style + kakao)
