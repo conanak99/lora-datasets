@@ -27,3 +27,10 @@ Requires ImageMagick (`brew install imagemagick`).
 ```
 
 Converts every image in `<folder>` to JPEG at quality 95, resizing so the shortest edge is 1536px (images already smaller are never upscaled). Output goes to a sibling folder named `<folder>_jpeg`; originals are untouched.
+
+## Training
+
+- Use Grad 1, 2400 steps (save every 250) or grad 2, 1500 steps (save every 100)
+- Trigger words convention:
+  - ctt_h4n44m3 (character + hanaame) / ctt_x140d1ng (character + xiaoding)
+  - stl_k4k40 (style + kakao)
