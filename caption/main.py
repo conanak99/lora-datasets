@@ -284,8 +284,8 @@ class CaptionApp:
     def _finish_generation(self, result: GenerationResult):
         self._reset_generation_controls()
         self._set_batch_status(f"done · {format_progress(result)}", GREEN)
-        if self.folder == self.generation_folder and self.images:
-            self.goto(self.idx)
+        if self.generation_folder:
+            self.open_folder(self.generation_folder)
 
     def _fail_generation(self, message: str):
         self._reset_generation_controls()

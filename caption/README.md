@@ -45,6 +45,9 @@ Double-click `run.command` in Finder, or launch from a terminal:
 2. Click **Generate Folder Captions…** and select a dataset folder.
 3. Leave the app running while the toolbar reports generation progress.
 
+After a successful batch finishes, the editor automatically opens the selected
+folder so you can review the generated captions.
+
 Images are processed in filename order. Each result is saved immediately as a
 same-name `.txt` file. Any image that already has a `.txt` file is skipped,
 including an empty file, so interrupted runs can safely resume by selecting the
