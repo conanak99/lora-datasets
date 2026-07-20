@@ -45,23 +45,16 @@ Double-click `run.command` in Finder, or launch from a terminal:
 2. Click **Generate Folder Captions…** and select a dataset folder.
 3. Leave the app running while the toolbar reports generation progress.
 
-After a successful batch finishes, the editor automatically opens the selected
-folder so you can review the generated captions.
+The first generation run downloads the model weights from Hugging Face and can
+take a while.
 
 Images are processed in filename order. Each result is saved immediately as a
 same-name `.txt` file. Any image that already has a `.txt` file is skipped,
 including an empty file, so interrupted runs can safely resume by selecting the
 same folder again.
 
-Source images stay at their original resolution on disk. Before inference, the
-app loads each image with Pillow and scales that in-memory copy to fit within
-1024×1024 while preserving its aspect ratio. This keeps model memory use bounded
-without changing the dataset files.
-
-The first generation run downloads the model weights from Hugging Face and can
-take a while. The 4B model also requires substantial memory. The model author
-warns that this abliterated model has reduced safety filtering, so review its
-captions before using or distributing them.
+After a successful batch finishes, the editor automatically opens the selected
+folder so you can review the generated captions.
 
 ## Development checks
 
@@ -74,31 +67,4 @@ uv run ty check
 uv run ruff check .
 uv run ruff format --check .
 uv run python -m pytest -v
-```
-
-Current Zed releases include both ty and Ruff for Python, so no separate
-extensions are required. The repository's `.zed/settings.json` selects ty for
-type checking, keeps Ruff for linting and formatting, and disables the default
-basedpyright server by omitting it. See [ty's Zed setup](https://docs.astral.sh/ty/editors/#zed)
-and [Zed's Python language-server configuration](https://zed.dev/docs/languages/python#configure-python-language-servers-in-zed).
-
-The checked-in project settings are equivalent to:
-
-```json
-{
-  "languages": {
-    "Python": {
-      "language_servers": ["ty", "ruff"],
-      "code_actions_on_format": {
-        "source.organizeImports.ruff": true
-      },
-      "formatter": {
-        "language_server": {
-          "name": "ruff"
-        }
-      },
-      "format_on_save": "on"
-    }
-  }
-}
 ```
