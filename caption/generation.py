@@ -94,7 +94,11 @@ class HuggingFaceCaptioner:
             ).to(self.model.device)
         finally:
             image.close()
-        generated_ids = self.model.generate(**inputs, max_new_tokens=512)
+        # transformers' Qwen3-VL type currently conflicts with its own writable
+        # generation cache protocol, although the runtime model implements generate.
+        generated_ids = self.model.generate(  # ty: ignore[invalid-argument-type]
+            **inputs, max_new_tokens=512
+        )
         generated_ids_trimmed = [
             output_ids[len(input_ids) :]
             for input_ids, output_ids in zip(

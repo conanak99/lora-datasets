@@ -1,3 +1,6 @@
+import tkinter as tk
+from typing import cast
+
 from generation import GenerationResult
 from main import CaptionApp
 
@@ -24,7 +27,7 @@ def test_app_does_not_open_folder_picker_on_empty_startup(monkeypatch):
     monkeypatch.setattr(CaptionApp, "_bind_keys", lambda self: None)
     root = FakeRoot()
 
-    CaptionApp(root, None)
+    CaptionApp(cast(tk.Tk, root), None)
 
     assert root.after_calls == []
 

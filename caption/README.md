@@ -65,24 +65,30 @@ captions before using or distributing them.
 
 ## Development checks
 
-Ruff is installed with the project's development dependencies. Run linting,
-format verification, and tests with:
+[ty](https://docs.astral.sh/ty/) and Ruff are installed with the project's
+development dependencies. Run type checking, linting, format verification, and
+tests with:
 
 ```bash
+uv run ty check
 uv run ruff check .
 uv run ruff format --check .
 uv run python -m pytest -v
 ```
 
-Current Zed releases include Ruff for Python, so a separate extension install is
-not required. See [Zed's Python and Ruff setup](https://zed.dev/docs/languages/python)
-or open `zed: extensions` and search for `Ruff` to confirm the built-in support.
-For format-on-save and import sorting, add this to Zed's `settings.json`:
+Current Zed releases include both ty and Ruff for Python, so no separate
+extensions are required. The repository's `.zed/settings.json` selects ty for
+type checking, keeps Ruff for linting and formatting, and disables the default
+basedpyright server by omitting it. See [ty's Zed setup](https://docs.astral.sh/ty/editors/#zed)
+and [Zed's Python language-server configuration](https://zed.dev/docs/languages/python#configure-python-language-servers-in-zed).
+
+The checked-in project settings are equivalent to:
 
 ```json
 {
   "languages": {
     "Python": {
+      "language_servers": ["ty", "ruff"],
       "code_actions_on_format": {
         "source.organizeImports.ruff": true
       },

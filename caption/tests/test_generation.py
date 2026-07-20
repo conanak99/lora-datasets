@@ -227,6 +227,7 @@ def test_hugging_face_captioner_generates_from_image_and_selected_prompt(
     output = captioner.generate(image_path, "full selected prompt")
 
     assert output == "generated caption"
+    assert processor.template_call is not None
     messages, template_options = processor.template_call
     assert len(messages) == 1
     assert messages[0]["role"] == "user"

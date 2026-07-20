@@ -287,11 +287,15 @@ class CaptionApp:
             while True:
                 event, payload = self.generation_queue.get_nowait()
                 if event == "progress":
-                    progress: GenerationProgress = payload
-                    self._set_batch_status(format_progress(progress), AMBER)
+                    if not isinstance(payload, GenerationProgress):
+                        self._fail_generation("invalid generation progress payload")
+                        return
+                    self._set_batch_status(format_progress(payload), AMBER)
                 elif event == "done":
-                    result: GenerationResult = payload
-                    self._finish_generation(result)
+                    if not isinstance(payload, GenerationResult):
+                        self._fail_generation("invalid generation result payload")
+                        return
+                    self._finish_generation(payload)
                 elif event == "error":
                     self._fail_generation(str(payload))
         except queue.Empty:
@@ -372,7 +376,7 @@ class CaptionApp:
         iw, ih = self.pil_image.size
         scale = min((cw - 24) / iw, (ch - 24) / ih, 1.0)
         w, h = max(int(iw * scale), 1), max(int(ih * scale), 1)
-        resized = self.pil_image.resize((w, h), Image.LANCZOS)
+        resized = self.pil_image.resize((w, h), Image.Resampling.LANCZOS)
         self.tk_image = ImageTk.PhotoImage(resized)
         self.canvas.delete("all")
         self.canvas.create_image(cw // 2, ch // 2, image=self.tk_image)
