@@ -1,8 +1,13 @@
 from pathlib import Path
+import sys
+from types import SimpleNamespace
 
 import pytest
 
+import generation
 from generation import (
+    MODEL_ID,
+    HuggingFaceCaptioner,
     PromptMode,
     clean_caption,
     discover_images,
@@ -26,6 +31,43 @@ class FakeCaptioner:
         if isinstance(output, Exception):
             raise output
         return output
+
+
+class FakeInputs(dict):
+    def __init__(self):
+        super().__init__(input_ids=[[10, 20, 30]])
+        self.input_ids = self["input_ids"]
+        self.device = None
+
+    def to(self, device):
+        self.device = device
+        return self
+
+
+class FakeModel:
+    device = "test-device"
+
+    def __init__(self):
+        self.generate_call = None
+
+    def generate(self, **kwargs):
+        self.generate_call = kwargs
+        return [[10, 20, 30, 40, 50]]
+
+
+class FakeProcessor:
+    def __init__(self):
+        self.template_call = None
+        self.decode_call = None
+        self.inputs = FakeInputs()
+
+    def apply_chat_template(self, messages, **kwargs):
+        self.template_call = (messages, kwargs)
+        return self.inputs
+
+    def batch_decode(self, token_ids, **kwargs):
+        self.decode_call = (token_ids, kwargs)
+        return ["generated caption"]
 
 
 def test_prompt_path_selects_character_and_style_files(tmp_path: Path):
@@ -127,3 +169,89 @@ def test_generate_folder_does_not_load_captioner_when_every_caption_exists(
     assert result.completed == 0
     assert result.skipped == 1
     assert captioner.load_calls == 0
+
+
+def test_hugging_face_captioner_generates_from_image_and_selected_prompt(
+    tmp_path: Path,
+):
+    model = FakeModel()
+    processor = FakeProcessor()
+    captioner = HuggingFaceCaptioner(model=model, processor=processor)
+    image_path = tmp_path / "image.jpg"
+
+    output = captioner.generate(image_path, "full selected prompt")
+
+    assert output == "generated caption"
+    messages, template_options = processor.template_call
+    assert messages == [
+        {
+            "role": "user",
+            "content": [
+                {"type": "image", "image": str(image_path)},
+                {"type": "text", "text": "full selected prompt"},
+            ],
+        }
+    ]
+    assert template_options == {
+        "tokenize": True,
+        "add_generation_prompt": True,
+        "return_dict": True,
+        "return_tensors": "pt",
+    }
+    assert processor.inputs.device == model.device
+    assert model.generate_call == {
+        "input_ids": [[10, 20, 30]],
+        "max_new_tokens": 512,
+    }
+    assert processor.decode_call == (
+        [[40, 50]],
+        {
+            "skip_special_tokens": True,
+            "clean_up_tokenization_spaces": False,
+        },
+    )
+
+
+def test_hugging_face_captioner_loads_model_card_configuration_once(monkeypatch):
+    model = FakeModel()
+    processor = FakeProcessor()
+    model_calls = []
+    processor_calls = []
+
+    class FakeModelClass:
+        @staticmethod
+        def from_pretrained(model_id, **kwargs):
+            model_calls.append((model_id, kwargs))
+            return model
+
+    class FakeProcessorClass:
+        @staticmethod
+        def from_pretrained(model_id):
+            processor_calls.append(model_id)
+            return processor
+
+    fake_torch = SimpleNamespace(bfloat16="bfloat16", set_num_threads=lambda count: None)
+    fake_transformers = SimpleNamespace(
+        AutoProcessor=FakeProcessorClass,
+        Qwen3VLForConditionalGeneration=FakeModelClass,
+    )
+    monkeypatch.setitem(sys.modules, "torch", fake_torch)
+    monkeypatch.setitem(sys.modules, "transformers", fake_transformers)
+    monkeypatch.setattr(generation.os, "cpu_count", lambda: 8)
+
+    captioner = HuggingFaceCaptioner()
+    captioner.load()
+    captioner.load()
+
+    assert model_calls == [
+        (
+            MODEL_ID,
+            {
+                "device_map": "auto",
+                "trust_remote_code": True,
+                "dtype": "bfloat16",
+                "low_cpu_mem_usage": True,
+            },
+        )
+    ]
+    assert processor_calls == [MODEL_ID]

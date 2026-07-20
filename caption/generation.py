@@ -3,12 +3,14 @@
 from collections.abc import Callable
 from dataclasses import dataclass
 from enum import Enum
+import os
 from pathlib import Path
 import re
-from typing import Protocol
+from typing import Any, Protocol
 
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
+MODEL_ID = "huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated"
 
 
 class PromptMode(str, Enum):
@@ -35,6 +37,64 @@ class GenerationResult:
     completed: int
     total: int
     skipped: int
+
+
+class HuggingFaceCaptioner:
+    """Lazy local adapter for the Huihui Qwen3-VL caption model."""
+
+    def __init__(self, model: Any = None, processor: Any = None):
+        self.model = model
+        self.processor = processor
+
+    def load(self) -> None:
+        if self.model is not None and self.processor is not None:
+            return
+
+        import torch
+        from transformers import AutoProcessor, Qwen3VLForConditionalGeneration
+
+        cpu_threads = max((os.cpu_count() or 1) // 2, 1)
+        os.environ["MKL_NUM_THREADS"] = str(cpu_threads)
+        os.environ["OMP_NUM_THREADS"] = str(cpu_threads)
+        torch.set_num_threads(cpu_threads)
+
+        self.model = Qwen3VLForConditionalGeneration.from_pretrained(
+            MODEL_ID,
+            device_map="auto",
+            trust_remote_code=True,
+            dtype=torch.bfloat16,
+            low_cpu_mem_usage=True,
+        )
+        self.processor = AutoProcessor.from_pretrained(MODEL_ID)
+
+    def generate(self, image_path: Path, prompt: str) -> str:
+        self.load()
+        messages = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image", "image": str(image_path)},
+                    {"type": "text", "text": prompt},
+                ],
+            }
+        ]
+        inputs = self.processor.apply_chat_template(
+            messages,
+            tokenize=True,
+            add_generation_prompt=True,
+            return_dict=True,
+            return_tensors="pt",
+        ).to(self.model.device)
+        generated_ids = self.model.generate(**inputs, max_new_tokens=512)
+        generated_ids_trimmed = [
+            output_ids[len(input_ids) :]
+            for input_ids, output_ids in zip(inputs.input_ids, generated_ids)
+        ]
+        return self.processor.batch_decode(
+            generated_ids_trimmed,
+            skip_special_tokens=True,
+            clean_up_tokenization_spaces=False,
+        )[0]
 
 
 def prompt_path(mode: PromptMode, repo_root: Path) -> Path:

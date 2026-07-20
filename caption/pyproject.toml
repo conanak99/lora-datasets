@@ -4,7 +4,12 @@ version = "0.1.0"
 description = "Add your description here"
 readme = "README.md"
 requires-python = ">=3.10"
-dependencies = ["pillow>=10.0"]
+dependencies = [
+    "accelerate>=1.0.0",
+    "pillow>=10.0",
+    "torch>=2.6.0",
+    "transformers>=4.57.0",
+]
 
 [dependency-groups]
 dev = [
