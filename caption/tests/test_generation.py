@@ -3,16 +3,21 @@ import sys
 from types import SimpleNamespace
 
 import pytest
+from PIL import Image
 
 import generation
 from generation import (
+    DEFAULT_PROMPT_DIR,
     MODEL_ID,
     HuggingFaceCaptioner,
     PromptMode,
     clean_caption,
     discover_images,
+    format_progress,
     generate_folder,
     prompt_path,
+    read_prompt,
+    resize_image_for_model,
 )
 
 
@@ -70,11 +75,33 @@ class FakeProcessor:
         return ["generated caption"]
 
 
+def test_model_id_uses_requested_4b_variant():
+    assert MODEL_ID == "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated"
+
+
+def test_default_prompt_directory_lives_inside_caption_app():
+    assert DEFAULT_PROMPT_DIR == Path(generation.__file__).resolve().parent / "prompt"
+
+
 def test_prompt_path_selects_character_and_style_files(tmp_path: Path):
-    assert prompt_path(PromptMode.CHARACTER, tmp_path) == (
-        tmp_path / "prompt_character.md"
+    prompt_dir = tmp_path / "prompt"
+
+    assert prompt_path(PromptMode.CHARACTER, prompt_dir) == (
+        prompt_dir / "prompt_character.md"
     )
-    assert prompt_path(PromptMode.STYLE, tmp_path) == tmp_path / "prompt_style.md"
+    assert prompt_path(PromptMode.STYLE, prompt_dir) == (
+        prompt_dir / "prompt_style.md"
+    )
+
+
+def test_read_prompt_loads_the_selected_prompt(tmp_path: Path):
+    prompt_dir = tmp_path / "prompt"
+    prompt_dir.mkdir()
+    (prompt_dir / "prompt_style.md").write_text(
+        "style instructions", encoding="utf-8"
+    )
+
+    assert read_prompt(PromptMode.STYLE, prompt_dir) == "style instructions"
 
 
 def test_discover_images_returns_supported_non_hidden_files_in_name_order(
@@ -98,6 +125,18 @@ def test_clean_caption_preserves_plain_caption():
     assert clean_caption("  A caption with `inline code`.  ") == (
         "A caption with `inline code`."
     )
+
+
+def test_resize_image_for_model_preserves_aspect_ratio_and_source(tmp_path: Path):
+    image_path = tmp_path / "wide.jpg"
+    Image.new("RGB", (2048, 1024), "red").save(image_path)
+
+    resized = resize_image_for_model(image_path)
+
+    assert resized.size == (1024, 512)
+    with Image.open(image_path) as source:
+        assert source.size == (2048, 1024)
+    resized.close()
 
 
 def test_generate_folder_skips_existing_captions_and_writes_missing_ones(
@@ -139,6 +178,17 @@ def test_generate_folder_reports_progress_after_each_completed_image(tmp_path: P
     assert all(item.skipped == 0 for item in progress)
 
 
+def test_format_progress_uses_pending_total_and_skipped_count():
+    progress = generation.GenerationProgress(
+        completed=2,
+        total=7,
+        skipped=3,
+        current=Path("current.jpg"),
+    )
+
+    assert format_progress(progress) == "generated 2 / 4 · skipped 3"
+
+
 def test_generate_folder_stops_on_error_and_preserves_completed_captions(
     tmp_path: Path,
 ):
@@ -178,25 +228,24 @@ def test_hugging_face_captioner_generates_from_image_and_selected_prompt(
     processor = FakeProcessor()
     captioner = HuggingFaceCaptioner(model=model, processor=processor)
     image_path = tmp_path / "image.jpg"
+    Image.new("RGB", (2048, 1024), "blue").save(image_path)
 
     output = captioner.generate(image_path, "full selected prompt")
 
     assert output == "generated caption"
     messages, template_options = processor.template_call
-    assert messages == [
-        {
-            "role": "user",
-            "content": [
-                {"type": "image", "image": str(image_path)},
-                {"type": "text", "text": "full selected prompt"},
-            ],
-        }
-    ]
+    assert len(messages) == 1
+    assert messages[0]["role"] == "user"
+    image_content, text_content = messages[0]["content"]
+    assert image_content["type"] == "image"
+    assert image_content["image"].size == (1024, 512)
+    assert text_content == {"type": "text", "text": "full selected prompt"}
     assert template_options == {
         "tokenize": True,
         "add_generation_prompt": True,
         "return_dict": True,
         "return_tensors": "pt",
+        "processor_kwargs": {"images_kwargs": {"max_pixels": 1024 * 1024}},
     }
     assert processor.inputs.device == model.device
     assert model.generate_call == {

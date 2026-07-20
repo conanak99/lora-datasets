@@ -32,7 +32,7 @@ Check [## Default Appearance] section for default appearance.
 ## Output caption requirements
 
 - The caption must be a single coherent, natural English paragraph — like a Creative Director's Brief, not a keyword pile or tag soup.
-- Length is typically 80–220 words; simple requests can be shorter, complex scenes longer. However, every important detail of an image must be captioned and if that requires the caption to be longer than 220 words, that is permitted.
+- Length is typically 80–160 words; simple requests can be shorter, complex scenes longer. However, every important detail of an image must be captioned and if that requires the caption to be longer than 160 words, that is permitted.
 - Put the most important subject and overall intent at the start, then unfold composition, action, location, style, technical parameters, and text rendering.
 - Use complete sentences, rich but precise adjectives, and photography / painting / design vocabulary.
 - Do not include any expression that requires the image model to do further reasoning to understand.

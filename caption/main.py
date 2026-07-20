@@ -9,14 +9,28 @@ Caption edits auto-save shortly after you stop typing.
 """
 
 import argparse
+import queue
 import sys
+import threading
 import tkinter as tk
 from pathlib import Path
-from tkinter import filedialog, font
+from tkinter import filedialog, font, ttk
 
 from PIL import Image, ImageTk
 
-IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
+from generation import (
+    DEFAULT_PROMPT_DIR,
+    IMAGE_EXTS,
+    GenerationProgress,
+    GenerationResult,
+    HuggingFaceCaptioner,
+    PromptMode,
+    format_progress,
+    generate_folder,
+    read_prompt,
+)
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
 
 BG = "#101014"
 PANEL = "#18181f"
@@ -26,9 +40,11 @@ MUTED = "#8a8a99"
 GREEN = "#5fbf77"
 AMBER = "#d9a441"
 ACCENT = "#6c8cff"
+RED = "#e06c75"
 
 SAVE_DELAY_MS = 600
 RESIZE_DELAY_MS = 80
+GENERATION_POLL_MS = 100
 
 THUMB_W = 96
 THUMB_H = 72
@@ -51,6 +67,10 @@ class CaptionApp:
         self.tk_image = None
         self.thumbs: list[ImageTk.PhotoImage | None] = []
         self.thumb_gen = 0  # invalidates in-flight thumbnail loads on folder change
+        self.captioner = HuggingFaceCaptioner()
+        self.generation_queue: queue.Queue[tuple[str, object]] = queue.Queue()
+        self.generating = False
+        self.generation_folder: Path | None = None
 
         root.title("Caption")
         root.geometry("1280x800")
@@ -80,6 +100,30 @@ class CaptionApp:
             )
 
         toolbar_btn("Open Folder…", self.pick_folder).pack(side="left")
+        self.generate_btn = toolbar_btn(
+            "Generate Folder Captions…", self.pick_generation_folder
+        )
+        self.generate_btn.pack(side="left", padx=(6, 0))
+
+        tk.Label(bar, text="Prompt:", bg=PANEL, fg=MUTED).pack(
+            side="left", padx=(12, 4)
+        )
+        self.prompt_mode_var = tk.StringVar(value="Character")
+        self.prompt_combo = ttk.Combobox(
+            bar,
+            textvariable=self.prompt_mode_var,
+            values=("Character", "Style"),
+            state="readonly",
+            width=10,
+        )
+        self.prompt_combo.pack(side="left")
+
+        self.batch_status_var = tk.StringVar()
+        self.batch_status_label = tk.Label(
+            bar, textvariable=self.batch_status_var, bg=PANEL, fg=GREEN
+        )
+        self.batch_status_label.pack(side="left", padx=8)
+
         self.fname_var = tk.StringVar()
         tk.Label(bar, textvariable=self.fname_var, bg=PANEL, fg=MUTED).pack(
             side="left", padx=12
@@ -176,6 +220,88 @@ class CaptionApp:
         )
         if chosen:
             self.open_folder(Path(chosen))
+
+    def pick_generation_folder(self):
+        if self.generating:
+            return
+        initial = self.folder if self.folder else REPO_ROOT
+        chosen = filedialog.askdirectory(
+            title="Choose a folder to caption", initialdir=str(initial)
+        )
+        if chosen:
+            self.start_generation(Path(chosen))
+
+    def start_generation(self, folder: Path):
+        mode = PromptMode(self.prompt_mode_var.get().lower())
+        try:
+            prompt = read_prompt(mode, DEFAULT_PROMPT_DIR)
+        except OSError as exc:
+            self._set_batch_status(f"prompt error: {exc}", RED)
+            return
+
+        self.generating = True
+        self.generation_folder = folder.expanduser().resolve()
+        self.generate_btn.config(state="disabled")
+        self.prompt_combo.config(state="disabled")
+        self._set_batch_status("loading model…", AMBER)
+
+        worker = threading.Thread(
+            target=self._generation_worker,
+            args=(self.generation_folder, prompt),
+            daemon=True,
+        )
+        worker.start()
+        self.root.after(GENERATION_POLL_MS, self._poll_generation_queue)
+
+    def _generation_worker(self, folder: Path, prompt: str):
+        try:
+            result = generate_folder(
+                folder,
+                prompt,
+                self.captioner,
+                lambda progress: self.generation_queue.put(("progress", progress)),
+            )
+        except Exception as exc:
+            self.generation_queue.put(("error", str(exc)))
+        else:
+            self.generation_queue.put(("done", result))
+
+    def _poll_generation_queue(self):
+        try:
+            while True:
+                event, payload = self.generation_queue.get_nowait()
+                if event == "progress":
+                    progress: GenerationProgress = payload
+                    self._set_batch_status(format_progress(progress), AMBER)
+                elif event == "done":
+                    result: GenerationResult = payload
+                    self._finish_generation(result)
+                elif event == "error":
+                    self._fail_generation(str(payload))
+        except queue.Empty:
+            pass
+
+        if self.generating:
+            self.root.after(GENERATION_POLL_MS, self._poll_generation_queue)
+
+    def _finish_generation(self, result: GenerationResult):
+        self._reset_generation_controls()
+        self._set_batch_status(f"done · {format_progress(result)}", GREEN)
+        if self.folder == self.generation_folder and self.images:
+            self.goto(self.idx)
+
+    def _fail_generation(self, message: str):
+        self._reset_generation_controls()
+        self._set_batch_status(f"error: {message}", RED)
+
+    def _reset_generation_controls(self):
+        self.generating = False
+        self.generate_btn.config(state="normal")
+        self.prompt_combo.config(state="readonly")
+
+    def _set_batch_status(self, text: str, color: str):
+        self.batch_status_var.set(text)
+        self.batch_status_label.config(fg=color)
 
     def open_folder(self, folder: Path):
         self.flush_save()

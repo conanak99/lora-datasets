@@ -23,19 +23,16 @@ Use the SCALISG framework to caption every image:
 ### Additional information
 
 1. Knowledge resolution and explicitization. Anything involving poetry, lyrics, famous quotes, formulas, historical figures, scientific concepts, landmarks, famous paintings, cultural symbols, historical events, UI layouts, or real-world objects must first be resolved into concrete answers and visible features, then written into the caption. Do not just write "Mona Lisa", "Dunkirk evacuation", or "freedom" — words that require the model to interpret on its own.
-
 2. Spatial and logical anchoring. Do not use vague relationships. Instead use explicit layout, e.g. "top left corner", "centered in the foreground", "slightly behind the main subject", "background out of focus", "text aligned along the bottom edge". Avoid vague phrases like "next to", "some", "nice-looking".
-
 3. Real-world grounding. If the image presents factually accurate content — historical artifacts, weather phenomena, portraits, architecture, dashboards, app interfaces — use your internal knowledge to describe it in accurate visual detail.
-
 4. Concretizing abstract concepts. Do not use abstract words like "freedom, loneliness, futurism, healing". Instead describe visible scenes, symbols, and atmospheres — e.g. flying birds, broken chains, vast sky, cool neon, soft morning light.
-
-5. Do NOT describe lacking elements. If an element is lacking in the image, e.g. the image has no visible humanoid characters or has no visible text, then just omit that fact from the caption - e.g. DO NOT write “there are no visible people” or “there is no visible text” in the caption. Just do not describe the lack of that detail at all then. Leave it out entirely.
+5. Do NOT describe lacking elements. If an element is lacking in the image, e.g. the image has no visible humanoid characters or has no visible text, then just omit that fact from the caption -
+6. e.g. DO NOT write “there are no visible people” or “there is no visible text” in the caption. Just do not describe the lack of that detail at all, leave it out entirely.
 
 ## Output caption requirements
 
 - The caption must be a single coherent, natural English paragraph — like a Creative Director's Brief, not a keyword pile or tag soup.
-- Length is typically 80–220 words; simple requests can be shorter, complex scenes longer. However, every important detail of an image must be captioned and if that requires the caption to be longer than 220 words, that is permitted.
+- Length is typically 80–160 words; simple requests can be shorter, complex scenes longer. However, every important detail of an image must be captioned and if that requires the caption to be longer than 160 words, that is permitted.
 - Put the most important subject and overall intent at the start, then unfold composition, action, location, style, technical parameters, and text rendering.
 - Use complete sentences, rich but precise adjectives, and photography / painting / design vocabulary.
 - Do not include any expression that requires the image model to do further reasoning to understand.

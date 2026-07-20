@@ -8,9 +8,14 @@ from pathlib import Path
 import re
 from typing import Any, Protocol
 
+from PIL import Image, ImageOps
+
 
 IMAGE_EXTS = {".jpg", ".jpeg", ".png", ".webp", ".gif", ".bmp"}
-MODEL_ID = "huihui-ai/Huihui-Qwen3-VL-8B-Instruct-abliterated"
+MODEL_ID = "huihui-ai/Huihui-Qwen3-VL-4B-Instruct-abliterated"
+DEFAULT_PROMPT_DIR = Path(__file__).resolve().parent / "prompt"
+MAX_IMAGE_SIZE = (1024, 1024)
+MAX_IMAGE_PIXELS = 1024 * 1024
 
 
 class PromptMode(str, Enum):
@@ -69,22 +74,27 @@ class HuggingFaceCaptioner:
 
     def generate(self, image_path: Path, prompt: str) -> str:
         self.load()
+        image = resize_image_for_model(image_path)
         messages = [
             {
                 "role": "user",
                 "content": [
-                    {"type": "image", "image": str(image_path)},
+                    {"type": "image", "image": image},
                     {"type": "text", "text": prompt},
                 ],
             }
         ]
-        inputs = self.processor.apply_chat_template(
-            messages,
-            tokenize=True,
-            add_generation_prompt=True,
-            return_dict=True,
-            return_tensors="pt",
-        ).to(self.model.device)
+        try:
+            inputs = self.processor.apply_chat_template(
+                messages,
+                tokenize=True,
+                add_generation_prompt=True,
+                return_dict=True,
+                return_tensors="pt",
+                processor_kwargs={"images_kwargs": {"max_pixels": MAX_IMAGE_PIXELS}},
+            ).to(self.model.device)
+        finally:
+            image.close()
         generated_ids = self.model.generate(**inputs, max_new_tokens=512)
         generated_ids_trimmed = [
             output_ids[len(input_ids) :]
@@ -97,9 +107,23 @@ class HuggingFaceCaptioner:
         )[0]
 
 
-def prompt_path(mode: PromptMode, repo_root: Path) -> Path:
-    """Return the repository prompt file for a captioning mode."""
-    return repo_root / f"prompt_{mode.value}.md"
+def prompt_path(mode: PromptMode, prompt_dir: Path) -> Path:
+    """Return the prompt file for a captioning mode."""
+    return prompt_dir / f"prompt_{mode.value}.md"
+
+
+def read_prompt(mode: PromptMode, prompt_dir: Path = DEFAULT_PROMPT_DIR) -> str:
+    """Read the full instructions for a captioning mode."""
+    return prompt_path(mode, prompt_dir).read_text(encoding="utf-8")
+
+
+def format_progress(progress: GenerationProgress | GenerationResult) -> str:
+    """Format generated and skipped counts for the desktop toolbar."""
+    pending_total = progress.total - progress.skipped
+    return (
+        f"generated {progress.completed} / {pending_total}"
+        f" · skipped {progress.skipped}"
+    )
 
 
 def discover_images(folder: Path) -> list[Path]:
@@ -127,6 +151,16 @@ def clean_caption(value: str) -> str:
     if fenced:
         return fenced.group(1).strip()
     return caption
+
+
+def resize_image_for_model(
+    image_path: Path, max_size: tuple[int, int] = MAX_IMAGE_SIZE
+) -> Image.Image:
+    """Load and resize an image in memory without modifying its source file."""
+    with Image.open(image_path) as source:
+        image = ImageOps.exif_transpose(source).convert("RGB")
+    image.thumbnail(max_size, Image.Resampling.LANCZOS)
+    return image
 
 
 def generate_folder(
