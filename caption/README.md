@@ -27,10 +27,10 @@ uv sync
 
 This does not remove downloaded Hugging Face models or dataset files.
 
-Double-click `run.command` in Finder (opens a folder picker), or from a terminal:
+Double-click `run.command` in Finder, or launch from a terminal:
 
 ```bash
-./run.sh                    # folder picker
+./run.sh                    # open the app without a folder
 ./run.sh ../data/hanaxame   # open a folder directly
 ```
 

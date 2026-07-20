@@ -3,9 +3,8 @@
 Usage:
     uv run main.py [folder]
 
-If no folder is given, a folder picker opens on launch. Every image in the
-folder is paired with a same-name .txt caption file, shown side by side.
-Caption edits auto-save shortly after you stop typing.
+If a folder is given, every image in it is paired with a same-name .txt caption
+file, shown side by side. Caption edits auto-save shortly after you stop typing.
 """
 
 import argparse
@@ -80,8 +79,6 @@ class CaptionApp:
 
         if folder:
             self.open_folder(folder)
-        else:
-            root.after(50, self.pick_folder)
 
     # ---------- UI ----------
 

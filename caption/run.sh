@@ -1,5 +1,5 @@
 #!/bin/bash
-# Launch the caption app. Opens a folder picker if no folder is given.
+# Launch the caption app. A folder can be opened from the toolbar.
 set -e
 cd "$(dirname "$0")"
 
