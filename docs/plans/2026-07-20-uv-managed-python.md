@@ -73,23 +73,25 @@ uv run python -m pytest tests/test_project_config.py -v
 
 Expected: both tests pass.
 
-### Task 3: Recreate and verify the local environment
+### Task 3: Migrate and verify the local environment
 
 **Files:**
 - Recreate locally, not tracked: `caption/.venv`
 
-**Step 1: Install managed Python and recreate the environment**
+**Step 1: Install managed Python and synchronize the environment**
 
 Run:
 
 ```bash
 cd caption
 uv python install 3.13
-uv venv --clear --python 3.13 --managed-python
 uv sync
 ```
 
-Expected: `.venv/bin/python` resolves to a uv-managed Python distribution and dependencies synchronize from `uv.lock`.
+Expected: uv detects and replaces an incompatible system-Python `.venv`, then
+`.venv/bin/python` resolves to a uv-managed Python distribution and dependencies
+synchronize from `uv.lock`. If automatic migration is interrupted, recover with
+`uv venv --clear --python 3.13 --managed-python` before `uv sync`.
 
 **Step 2: Verify Tkinter without opening the app**
 

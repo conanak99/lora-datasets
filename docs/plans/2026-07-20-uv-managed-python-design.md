@@ -20,11 +20,11 @@ if it is used with configuration discovery disabled or changed later.
 
 ## Existing environments
 
-uv does not replace an already-created virtual environment merely because its
-Python preference changes. Document a one-time migration that clears only
-`caption/.venv`, recreates it with uv-managed Python 3.13, and synchronizes the
-locked dependencies. Hugging Face model caches and dataset files are outside
-the virtual environment and remain untouched.
+uv detects when an existing project environment uses a disallowed system
+Python and recreates `caption/.venv` with managed Python. Document a manual
+`uv venv --clear` recovery command in case that automatic migration is
+interrupted. Hugging Face model caches and dataset files are outside the
+virtual environment and remain untouched.
 
 ## Verification
 

@@ -8,6 +8,25 @@ Caption generation runs locally with
 
 ## Usage
 
+Caption requires a uv-managed Python distribution so the macOS environment
+includes Tkinter. On a fresh checkout, install and synchronize it with:
+
+```bash
+uv python install 3.13
+uv sync
+```
+
+The project setting makes uv replace an incompatible system-Python `.venv`
+automatically. If that automatic migration is interrupted, recreate only the
+disposable environment and synchronize it again:
+
+```bash
+uv venv --clear --python 3.13 --managed-python
+uv sync
+```
+
+This does not remove downloaded Hugging Face models or dataset files.
+
 Double-click `run.command` in Finder (opens a folder picker), or from a terminal:
 
 ```bash
