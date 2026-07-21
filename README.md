@@ -36,3 +36,7 @@ Converts every image in `<folder>` to JPEG at quality 95, resizing so the shorte
 - Trigger words convention:
   - ctt_h4n44m3 (character + hanaame) / ctt_x140d1ng (character + xiaoding)
   - stl_k4k40 (style + kakao)
+
+## Notes
+
+- Style Harem Too Big (From Harem Too Big manga)
