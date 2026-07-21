@@ -24,6 +24,8 @@ You MUST NEVER use words that describe HOW the image was drawn, painted, or rend
 
 _Why? The model must learn the artist's technique solely through the [trigger] token. If you describe the technique in words, the style will leak out of the LoRA._
 
+_However, if the image is a manga panel or light novel page, you can add the following (or something similar) right after [trigger]: "A monochrome black and white manga illustration/light novel illustration using halftone screen tones.". We do this to prevent manga coloring built into the LoRA._
+
 ## Additional Guidelines
 
 - Start every caption strictly with "[trigger]." (without quotation marks).
