@@ -46,7 +46,7 @@ config:
       train:
         batch_size: 1
         bypass_guidance_embedding: false
-        steps: 2000
+        steps: 1800
         gradient_accumulation: 2
         train_unet: true
         train_text_encoder: false
