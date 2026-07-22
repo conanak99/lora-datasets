@@ -10,13 +10,16 @@ Use the SCALIS framework to caption every image:
 - **Action**: what the subject is doing, direction of motion, posture, interactions.
 - **Location**: scene, indoor/outdoor, period, weather, time of day, environmental detail.
 - **Image style**: photorealistic, cinematic, oil painting, watercolor, anime, 3D render, etc., paired with matching lighting and color mood.
-- **Specs**: photographic/render parameters, e.g. 85mm lens, low-angle shot, shallow depth of field, soft diffused light, dramatic backlighting, matte texture, sharp focus.
+- **Specs**: photographic/render parameters, e.g. 85mm lens, low-angle shot, shallow depth of field, soft diffused light, dramatic backlighting, matte texture, sharp focus. (randomly make spec blank)
 
 ## Guidelines
 
 - Do ALWAYS describe the subject visible in the images as [trigger] (with the brackets) instead of their name or pronouns like he or she. example: "[trigger] is standing in a kitchen wearing a tshirt and jeans." be sure to use only [trigger] - NOT any additional descriptors such as “[trigger], a young woman”.
 - Do ALWAYS describe whether the mouth is open or closed
-- Do ALWAYS describe whether it is a full-length/full-body shot, medium (upper body) shot, or (facial) closeup/headshot.
+- Do ALWAYS describe whether it is a full-length/full-body shot, medium (upper body) shot, or (facial) closeup/headshot. example: "a full-body shot of [trigger] standing in a kitchen wearing a tshirt and jeans..."
+- Randomly choose a format for the caption. example:
+  - a XXX shot of [trigger] standing in a kitchen wearing a tshirt and jeans.
+  - [trigger] is standing in a kitchen wearing a tshirt and jeans.
 
 ## Do NOT ever describe/caption anything of the following
 

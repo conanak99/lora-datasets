@@ -109,11 +109,11 @@ class CaptionApp:
         tk.Label(bar, text="Prompt:", bg=PANEL, fg=MUTED).pack(
             side="left", padx=(12, 4)
         )
-        self.prompt_mode_var = tk.StringVar(value="Character")
+        self.prompt_mode_var = tk.StringVar(value="Person")
         self.prompt_combo = ttk.Combobox(
             bar,
             textvariable=self.prompt_mode_var,
-            values=("Character", "Style"),
+            values=("Person", "Style"),
             state="readonly",
             width=10,
         )

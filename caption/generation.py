@@ -18,7 +18,7 @@ MAX_IMAGE_PIXELS = 1024 * 1024
 
 
 class PromptMode(str, Enum):
-    CHARACTER = "character"
+    PERSON = "person"
     STYLE = "style"
 
 
