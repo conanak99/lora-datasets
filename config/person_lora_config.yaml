@@ -20,11 +20,11 @@ config:
       save:
         dtype: "bf16"
         save_every: 100
-        max_step_saves_to_keep: 4
+        max_step_saves_to_keep: 10
         save_format: "diffusers"
         push_to_hub: false
       datasets:
-        - folder_path: "/app/ai-toolkit/datasets/ctt_h4n44m3"
+        - folder_path: "/app/ai-toolkit/datasets/select_people"
           mask_path: null
           mask_min_value: 0.1
           default_caption: ""
@@ -58,7 +58,7 @@ config:
         optimizer_params:
           weight_decay: 0.0001
         unload_text_encoder: false
-        cache_text_embeddings: false
+        cache_text_embeddings: true
         lr: 0.0001
         ema_config:
           use_ema: false
