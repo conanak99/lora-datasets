@@ -40,3 +40,4 @@ Converts every image in `<folder>` to JPEG at quality 95, resizing so the shorte
 ## Notes
 
 - Style Harem Too Big (From Harem Too Big manga)
+- Style Sweet Guy (From Sweet Guy - He Does A Body Good manga)
